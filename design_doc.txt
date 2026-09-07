@@ -1,0 +1,59 @@
+Social Media studio 
+
+Problem
+
+Build a service that changes one blog post into a social media campaign. The service makes one variant for each
+platform. Each platform has different rules for length, tone, and hashtags. A person approves each variant. A
+scheduler publishes each approved variant at a set time, through one clean adapter interface. Ensure idempotency 
+
+Design
+
+Components
+
+1. App
+2. AI agent
+3.Database
+4.Static assets storage bucket
+ Other mini components { scheduler , publisher }
+
+1. App
+
+Front-end 
+
+Back-end →API interface
+
+POST /socials/post   [post{link or text}]
+
+GET  /socials/posts    [return submitted posts]
+
+GET /socials/post/{id}     [return a post by id]
+
+POST /socials/platform    [register a new social media platform, offical page link]
+
+GET /socials/platforms     [return registered social media platforms]
+
+GET /socials/platform/{name}     [ return a social media platform by name]
+
+POST  /socials/makeVariants       [make a post variants, submit { post id, social media platform id/name } ]
+
+GET /socials/{post}/variants        [Get generated variants of the specific post]
+
+GET /socials/{post}/{variant}       [Get a specific variant of a specific post]
+
+POST /socials/{post}/{variant}      [update status of the specific variant, after review,, body { approved : TRUE || FALSE }
+
+
+
+2. AI Agent
+
+Generate variants from a post
+
+3. Database
+
+Tables:
+
+      Posts { id INT Primary Key, name TEXT, location TEXT, date_of_submission DATE }
+
+      Variants { id INT Primary Key, name TEXT, location TEXT, post_Id FOREIGN KEY INT, platform_id Foreign Key INT, status[draft, approved, rejected, published], date_of_creation DATE }
+
+      Platforms { id INT Primary Key, name TEXT, location TEXT, date_of_admission DATE }
