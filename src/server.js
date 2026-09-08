@@ -5,7 +5,7 @@ import router from './routes/router.js'
 
 // initialize server
 const app = express();
-
+app.use(express.json());
 env.config()
 
 app.use(router);
