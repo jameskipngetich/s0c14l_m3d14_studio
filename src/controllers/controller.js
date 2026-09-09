@@ -5,6 +5,9 @@ import { readFile, writeFile } from 'fs/promises';
 /* functions
  *  home()
  *  submitPost()
+ *  viewPosts()
+ *  viewPost()
+ *  updatePost()
  */
 
 export async function home(req, res){
@@ -32,5 +35,65 @@ export async function submitPost(req, res){
 	}catch(error) {
 		console.error(error);
 		res.status(500).json({'message':"Failed to submit and store post :("});
+	}
+}
+
+// Function to view submitted posts
+export async function viewPosts( req, res ) {
+	try {
+		const { data, error } = await supabase.from('posts').select();
+		const posts = JSON.parse( JSON.stringify({
+			data: data.map(( { name, date_of_submission }) => ({ name, date_of_submission }))
+		}, null, 2));
+		res.status(200).json(posts);
+	}catch(error) {
+		console.error(error);
+		res.status(500).json({"message": "Failed to retrieve posts :( "});
+	}
+}
+
+// View submitted post
+export async function viewPost( req, res ) {
+	const post_name = req.params.name;
+	try {
+		const { data, error } = await supabase.from('posts').select().eq('name', post_name);
+		const filename = data[0].access_key;
+		console.log(filename);
+		const post_data = JSON.parse( await readFile(filename, 'utf8'));
+
+		res.status(200).json(post_data);
+	}catch(error) {
+		console.error(error);
+		res.status(500).json({"message": "Failed to retrieve post :( "});
+	}
+}
+
+// Update a post
+export async function updatePost(req, res) {
+	const post_name = req.params.name;
+	try {
+		const {data, error: selectError } = await supabase.from('posts').select().eq('name', post_name);
+		if(selectError){
+			console.log(selectError);
+			res.status(404).json({'error': 'Post not found :( '});
+			return;
+		}
+		const filename = data[0].access_key;
+		const id = data[0].id;
+		const current_post_data = JSON.parse( await readFile(filename, 'utf8'));
+		const post_data = { 'name':post_name, 'content':req.body.post} ?? current_post_data;
+		await writeFile(filename, JSON.stringify(post_data,null,2), 'utf8');
+	        const { error: updateError } = await supabase.from('posts').update({name: post_name}).eq('id', id);
+
+		if(updateError) {
+			console.log(updateError);
+			res.status(400).json({'error': 'Failed to update post :( '});
+			return;
+		}
+
+		res.status(200).json({'message': "Post successfully updated :)"});
+	} catch(error) {
+		console.error(error);
+		res.status(500).json({'message': "Failed to update post :( "});
 	}
 }
