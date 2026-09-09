@@ -8,6 +8,10 @@ import { readFile, writeFile } from 'fs/promises';
  *  viewPosts()
  *  viewPost()
  *  updatePost()
+ *  registerPlatform()
+ *  viewPlatforms()
+ *  viewPlatform()
+ *  updatePlatform()
  */
 
 export async function home(req, res){
@@ -94,6 +98,79 @@ export async function updatePost(req, res) {
 		res.status(200).json({'message': "Post successfully updated :)"});
 	} catch(error) {
 		console.error(error);
-		res.status(500).json({'message': "Failed to update post :( "});
+		res.status(500).json({'message': "Something is Wrong :( "});
+	}
+}
+// Function to registering a new platform
+export async function registerPlatform(req, res){
+	const name = req.body.name;
+	const official_link = req.body.link;
+	const now = new Date();
+	try{
+		const { data, error } = await supabase.from('platforms').insert({name: name, official_link: official_link, date_of_registration: now }).select();
+		console.log(data);
+		res.status(200).json({'message':"Platform successfully registered :) "});
+	}catch(error) {
+		console.error(error);
+		res.status(500).json({'message':"Failed to register platform :("});
+	}
+}
+
+// Function to view registered platforms
+export async function viewPlatforms( req, res ) {
+	try {
+		const { data, error } = await supabase.from('platforms').select();
+		const platforms = JSON.parse( JSON.stringify({
+			data: data.map(( { name, official_link, date_of_registration }) => ({ name, official_link, date_of_registration }))
+		}, null, 2));
+		res.status(200).json(platforms);
+	}catch(error) {
+		console.error(error);
+		res.status(500).json({"message": "Failed to retrieve registered platforms :( "});
+	}
+}
+
+// View registered Platform
+export async function viewPlatform( req, res ) {
+	const platform_name = req.params.name;
+	try {
+		const { data, error } = await supabase.from('platforms').select().eq('name', platform_name);
+		if(error) {
+			console.log(error);
+			res.status(404).json({'Error': 'Platform is not registered'});
+			return;
+		}
+
+		res.status(200).json(data);
+	}catch(error) {
+		console.error(error);
+		res.status(500).json({"message": "Failed to retrieve registered platform :( "});
+	}
+}
+
+// Update a platform registration
+export async function updatePlatform(req, res) {
+	const platform_name = req.params.name;
+	try {
+		const {data, error: selectError } = await supabase.from('platforms').select().eq('name', platform_name);
+		if(selectError){
+			console.log(selectError);
+			res.status(404).json({'error': 'Platform not found :( '});
+			return;
+		}
+		const id = data[0].id;
+		const official_link = req.body.link ?? data[0].official_link;
+	        const { error: updateError } = await supabase.from('platforms').update({name: platform_name, official_link: official_link}).eq('id', id);
+
+		if(updateError) {
+			console.log(updateError);
+			res.status(400).json({'error': 'Failed to update platform :( '});
+			return;
+		}
+
+		res.status(200).json({'message': "Platform successfully updated :)"});
+	} catch(error) {
+		console.error(error);
+		res.status(500).json({'message': "Something is wrong :( "});
 	}
 }
