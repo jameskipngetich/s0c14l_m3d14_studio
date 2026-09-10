@@ -9,6 +9,7 @@ import { home,
 	viewPlatforms,
 	viewPlatform,
 	updatePlatform,
+	makeVariants,
 			} from '../controllers/controller.js';
 
 const router = new Router();
@@ -32,5 +33,6 @@ router.get('/socials/platforms/:name', viewPlatform);
 
 router.post('/socials/platforms/:name', updatePlatform);
 
+router.post('/socials/makevariants/:name', makeVariants);
 
 export default router;

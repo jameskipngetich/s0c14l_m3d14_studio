@@ -1,7 +1,8 @@
 // Business logic of the app
 import supabase from '../db.js';
 import { readFile, writeFile } from 'fs/promises';
-
+import axios from 'axios';
+import env from 'dotenv';
 /* functions
  *  home()
  *  submitPost()
@@ -12,8 +13,10 @@ import { readFile, writeFile } from 'fs/promises';
  *  viewPlatforms()
  *  viewPlatform()
  *  updatePlatform()
+ *  makeVariants()
  */
-
+//Point of thought should we save posts as title, url, content,,content saved in bucket/static asset, and url in db
+env.config();
 export async function home(req, res){
 	try{
 		res.status(200).json({'message':'W e l c o m e   h o m e !    A   s o c i a l    m e d i a     s t u d i o'});
@@ -172,5 +175,33 @@ export async function updatePlatform(req, res) {
 	} catch(error) {
 		console.error(error);
 		res.status(500).json({'message': "Something is wrong :( "});
+	}
+}
+
+// Function to make variants
+export async function makeVariants(req, res){
+	try{
+		const post_title = req.params.name;
+		const { data, error } = await supabase.from('posts').select().eq('name', post_title);
+		const filename = data[0].access_key;
+		const post_data = JSON.parse(await readFile(filename, 'utf8'));
+		console.log(post_data.content);
+		const ai_agent = process.env.AI_AGENT_API
+		const payload = {
+			title: post_title,
+			url: 'none',
+			content: post_data.content,
+		}
+		const response = await axios.post(ai_agent, payload, { 
+			headers: {
+				'Content-Type':'application/json'
+			}
+		});
+
+		const variants = JSON.stringify(response.data);
+		res.status(200).json(variants);
+	}catch(error){
+		console.error(error);
+		res.status(500).json({'error':'Something is wrong :( '});
 	}
 }
